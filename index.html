@@ -263,7 +263,7 @@ h1 {
 
 .card-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -494,15 +494,14 @@ async function fetchFromJson() {
     // Merge bot data into accounts list
     const existingPseudos = accounts.map(a => a.pseudo);
     keys.forEach(pseudo => {
-      const { gold, prestige } = data[pseudo];
+      const { gold, prestige, gems } = data[pseudo];
       const existing = accounts.find(a => a.pseudo === pseudo);
       if (existing) {
         existing.gold = gold;
         existing.prestige = prestige;
+        existing.gems = gems || 0;
       } else {
-        // Insert in order
-        const idx = ACCOUNT_ORDER.indexOf(pseudo);
-        accounts.push({ id: nextId++, pseudo, prestige, gold });
+        accounts.push({ id: nextId++, pseudo, prestige, gold, gems: gems || 0 });
       }
     });
     // Sort by ACCOUNT_ORDER
@@ -568,11 +567,13 @@ function renderSummary() {
   const ready = accounts.filter(a => { const c = getCap(a.prestige); return c === null || a.gold >= c; }).length;
   const totalGold = accounts.reduce((s,a) => s + (parseFloat(a.gold)||0), 0);
   const totalLeft = accounts.reduce((s,a) => { const c = getCap(a.prestige); return s + (c ? Math.max(0, c-(parseFloat(a.gold)||0)) : 0); }, 0);
+  const totalGems = accounts.reduce((s,a) => s + (parseFloat(a.gems)||0), 0);
   document.getElementById('accountCount').textContent = `${total} account${total!==1?'s':''}`;
   document.getElementById('summaryRow').innerHTML = `
     <div class="metric"><div class="metric-label">Accounts</div><div class="metric-value">${total}</div></div>
     <div class="metric"><div class="metric-label">Ready to Prestige</div><div class="metric-value">${ready} / ${total}</div></div>
     <div class="metric"><div class="metric-label">Total Gold</div><div class="metric-value">${fmt(totalGold)}</div></div>
+    <div class="metric"><div class="metric-label">💎 Total Gems</div><div class="metric-value">${fmt(totalGems)}</div></div>
     <div class="metric"><div class="metric-label">Still to Farm</div><div class="metric-value">${fmt(totalLeft)}</div></div>
   `;
 }
@@ -593,6 +594,7 @@ function updateCardResult(card, acc) {
 
 function createCard(acc, idx) {
   const gold = parseFloat(acc.gold) || 0;
+  const gems = parseFloat(acc.gems) || 0;
   const cap = getCap(acc.prestige);
   const remaining = cap !== null ? Math.max(0, cap - gold) : 0;
   const pct = cap !== null ? Math.min(100, Math.round((gold/cap)*100)) : 100;
@@ -617,7 +619,11 @@ function createCard(acc, idx) {
       </div>
       <div class="field">
         <label>Current Gold</label>
-        <input type="number" value="${Math.round(gold)}" step="1000000" min="0" placeholder="0" />
+        <input type="number" class="gold-inp" value="${Math.round(gold)}" step="1000000" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label>💎 Gems</label>
+        <input type="number" class="gems-inp" value="${Math.round(gems)}" step="1000" min="0" placeholder="0" readonly style="opacity:0.6;cursor:default;" />
       </div>
     </div>
     <div class="result">
