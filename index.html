@@ -428,10 +428,127 @@ h1 {
   .card-fields { grid-template-columns: 1fr; }
   .caps-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── LOGIN ── */
+#loginScreen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.6), rgba(6,182,212,0.4), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.login-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--g1), var(--g3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-h {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin-top: -8px;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  letter-spacing: 0.05em;
+}
+
+.login-input:focus { border-color: rgba(124,58,237,0.6); }
+
+.login-btn {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, var(--g1), var(--g2));
+  border: none;
+  border-radius: 10px;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+  letter-spacing: 0.02em;
+}
+
+.login-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.login-btn:active { transform: scale(0.97); }
+
+.login-error {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--red);
+  text-align: center;
+  min-height: 16px;
+}
 </style>
 </head>
 <body>
-<div class="wrapper">
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-title">Attack on Titan: Revolution</div>
+    <div class="login-h">Farm Tracker</div>
+    <input class="login-input" type="password" id="pwdInput" placeholder="Password" onkeydown="if(event.key==='Enter')checkLogin()" />
+    <button class="login-btn" onclick="checkLogin()">Enter</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="wrapper" id="mainApp" style="display:none;">
 
   <header>
     <div>
@@ -675,16 +792,13 @@ function renderAccounts() {
 function render() { renderSummary(); renderAccounts(); }
 
 function addAccount() {
-  accounts.push({ id: nextId++, pseudo: '', prestige: 0, gold: 0 });
+  accounts.push({ id: nextId++, pseudo: '', prestige: 0, gold: 0, gems: 0 });
   save(); render();
   setTimeout(() => {
     const cards = document.querySelectorAll('.card');
     if (cards.length) { const last = cards[cards.length-1]; last.scrollIntoView({behavior:'smooth',block:'center'}); last.querySelector('.pseudo-input').focus(); }
   }, 40);
 }
-
-load(); render();
-autoSync();
 </script>
 
 <div style="text-align:center;margin-top:3rem;padding-bottom:1rem;display:flex;flex-direction:column;align-items:center;gap:10px;">
@@ -706,6 +820,30 @@ function copyDiscord() {
       btn.style.background = '#5865F2';
     }, 2000);
   });
+}
+
+function checkLogin() {
+  const pwd = document.getElementById('pwdInput').value;
+  if (pwd === 'Adamdu31~~!') {
+    sessionStorage.setItem('aotr_auth', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    load(); render(); autoSync();
+  } else {
+    const err = document.getElementById('loginError');
+    err.textContent = 'Wrong password.';
+    document.getElementById('pwdInput').value = '';
+    setTimeout(() => err.textContent = '', 2000);
+  }
+}
+
+// Check session on load
+if (sessionStorage.getItem('aotr_auth') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  load(); render(); autoSync();
+} else {
+  setTimeout(() => document.getElementById('pwdInput').focus(), 100);
 }
 </script>
 </body>
