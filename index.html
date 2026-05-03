@@ -487,23 +487,16 @@ async function fetchFromJson() {
     const res = await fetch('https://aotr-farm-tracker-production.up.railway.app/data?t=' + Date.now());
     if (!res.ok) return false;
     const data = await res.json();
-    // data is { AccountName: { gold, prestige }, ... }
     const keys = Object.keys(data);
     if (!keys.length) return false;
 
-    // Merge bot data into accounts list
-    const existingPseudos = accounts.map(a => a.pseudo);
-    keys.forEach(pseudo => {
+    // Rebuild accounts list entirely from Railway data
+    accounts = keys.map((pseudo, i) => {
       const { gold, prestige, gems } = data[pseudo];
-      const existing = accounts.find(a => a.pseudo === pseudo);
-      if (existing) {
-        existing.gold = gold;
-        existing.prestige = prestige;
-        existing.gems = gems || 0;
-      } else {
-        accounts.push({ id: nextId++, pseudo, prestige, gold, gems: gems || 0 });
-      }
+      return { id: i + 1, pseudo, prestige, gold, gems: gems || 0 };
     });
+    nextId = accounts.length + 1;
+
     // Sort by ACCOUNT_ORDER
     accounts.sort((a, b) => {
       const ia = ACCOUNT_ORDER.indexOf(a.pseudo);
@@ -518,16 +511,8 @@ async function fetchFromJson() {
   }
 }
 
-function load() {
-  try {
-    const s = localStorage.getItem('aotr_v3');
-    if (s) { const p = JSON.parse(s); if (Array.isArray(p) && p.length) { accounts = p; nextId = Math.max(...p.map(a => a.id)) + 1; } }
-  } catch(e) {}
-}
-
-function save() {
-  try { localStorage.setItem('aotr_v3', JSON.stringify(accounts)); } catch(e) {}
-}
+function load() {} // No-op, Railway is the source of truth
+function save() {}  // No-op, Railway is the source of truth
 
 function updateSyncBadge() {
   const badge = document.getElementById('syncBadge');
